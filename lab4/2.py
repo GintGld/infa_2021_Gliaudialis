@@ -4,6 +4,7 @@ from pygame.draw import *
 pg.init()
 FPS = 30
 alpha = 150
+#Координаты верхнего левого угла машины
 x = 135
 y = 450
 
@@ -34,7 +35,7 @@ rect(screen, (184, 201, 197), (70, 70, 77, 275))
 ##Середина
 ellipse(surface3, (169, 187, 187, alpha), (90, 100, 300, 80))
 screen.blit(surface3, (0, 0))
-#Машина
+#Машина и дым от нее
 ellipse(screen, (184, 201, 197), (-20, 400, 500, 150))
 ellipse(screen, (0, 0, 0), (x - 12, y - 10, 15, 5))
 polygon(screen, (0, 205, 255) ,[(x, y), (x, y - 30), (x + 30, y - 30), 
