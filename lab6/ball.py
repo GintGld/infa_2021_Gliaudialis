@@ -256,7 +256,7 @@ finished = False
 balls = []
 tr_s = []
 menu = False
-time = 7
+time = 20
 pause = False
 
 while not menu:
@@ -312,7 +312,7 @@ while not finished and time > 0 :
         tr = create_tr()
         tr_s.append(tr)
     draw_backgrownd(time, points)
-    time -= 1 / 30
+    time -= 1 / FPS
     pg.display.update()
 
 menu = False
