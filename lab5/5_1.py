@@ -126,8 +126,10 @@ def t3():
     img = font.render('Красивое', True, (0,0,0))
     screen.blit(img, (433, 646))
 
+draw_village()
 clock = pg.time.Clock()
 finished = False
+pg.display.update()
 
 k = 0
 while not finished:
