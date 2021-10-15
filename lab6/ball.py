@@ -385,7 +385,7 @@ def start(menu, rate, finished):
                     menu = True
                 if is_mouse_in_rate_box(cl_x, cl_y):
                     rate = True
-                    inp = open(r'C:\Users\coolg\Desktop\top.txt', 'r')
+                    inp = open(r'C:\Users\coolg\infa_2021_Gliaudialis\lab6\top.txt', 'r')
                     s = inp.readlines()
                     a = []
                     for i in s:
@@ -489,7 +489,7 @@ while not fin:
     if time <= 0: #Костыль для выходного меню
         fin = False
         men = False
-    inp = open(r'C:\Users\coolg\Desktop\top.txt', 'r')
+    inp = open(r'C:\Users\coolg\infa_2021_Gliaudialis\lab6\top.txt', 'r')
     s = inp.readlines()
     a = []
     for i in s:
@@ -497,7 +497,7 @@ while not fin:
     a.append(int(points))
     a.sort()
     inp.close()
-    out = open(r'C:\Users\coolg\Desktop\top.txt', 'w')
+    out = open(r'C:\Users\coolg\infa_2021_Gliaudialis\lab6\top.txt', 'w')
     print(a[5], file=out)
     print(a[4], file=out)
     print(a[3], file=out)
