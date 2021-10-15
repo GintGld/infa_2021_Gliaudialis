@@ -405,9 +405,9 @@ def game(finished, time, points, balls, tr_s):
     Тело игры
     тут проходит сама игра
     '''
+    pause = False
     while not finished and time > 0:
         clock.tick(FPS)
-        pause = False
         ball_to_del = []
         tr_to_del = []
         for event in pg.event.get():
