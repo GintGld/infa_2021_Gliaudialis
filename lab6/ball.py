@@ -385,7 +385,7 @@ def start(menu, rate, finished):
                     menu = True
                 if is_mouse_in_rate_box(cl_x, cl_y):
                     rate = True
-                    inp = open(r'C:\Users\coolg\infa_2021_Gliaudialis\lab6\top.txt', 'r')
+                    inp = open(r'infa_2021_Gliaudialis\lab6\top.txt', 'r')
                     s = inp.readlines()
                     a = []
                     for i in s:
@@ -485,11 +485,11 @@ while not fin:
     Основной цикл
     '''
     men, rate, fin = start(menu = men, rate = False, finished = fin)
-    fin, points, time = game(finished = fin, time = 1, points = 0, balls = [], tr_s = [])
+    fin, points, time = game(finished = fin, time = 30, points = 0, balls = [], tr_s = [])
     if time <= 0: #Костыль для выходного меню
         fin = False
         men = False
-    inp = open(r'C:\Users\coolg\infa_2021_Gliaudialis\lab6\top.txt', 'r')
+    inp = open(r'infa_2021_Gliaudialis\lab6\top.txt', 'r')
     s = inp.readlines()
     a = []
     for i in s:
@@ -497,7 +497,7 @@ while not fin:
     a.append(int(points))
     a.sort()
     inp.close()
-    out = open(r'C:\Users\coolg\infa_2021_Gliaudialis\lab6\top.txt', 'w')
+    out = open(r'infa_2021_Gliaudialis\lab6\top.txt', 'w')
     print(a[5], file=out)
     print(a[4], file=out)
     print(a[3], file=out)
