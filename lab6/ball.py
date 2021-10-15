@@ -7,6 +7,9 @@ from random import randint
 from random import random
 pg.init()
 
+'''
+Константы
+'''
 FPS = 30
 dt = 0.2
 width = 900
@@ -20,15 +23,114 @@ max_r = 50
 max_w = 1
 k = 4
 
-screen = pg.display.set_mode((width, height))
+clock = pg.time.Clock()
+menu = False
+time = 1
+pause = False
+end = False
+rate = False
 
-def start_menu():
+screen = pg.display.set_mode((width, height))
+surface1 = pg.Surface((0.107 * width, 0.048 * height), pg.SRCALPHA)
+surface2 = pg.Surface((0.17 * width, 0.096 * height), pg.SRCALPHA)
+surface3 = pg.Surface((0.134 * width, 0.048 * height), pg.SRCALPHA)
+surface4 = pg.Surface((0.134 * width, 0.048 * height), pg.SRCALPHA)
+
+def is_mouse_in_start_box(x, y):
     '''
-    Вступительное меню
+    Находится ли мышь на кнопке старт
     '''
-    font = pg.font.SysFont(None, 20)
-    img = font.render('Нажмите в любом месте, чтобы начать', True, (255, 255, 255))
-    screen.blit(img, (0.35 * width, 0.5 * height))
+    if (x - 0.45 * width) * (x - 0.557 * width) <= 0 and (y - 0.405 * height) * (y - 0.453 * height) <= 0:
+        return True
+    else:
+        return False
+
+def is_mouse_in_rate_box(x, y):
+    if (x - 0.418 * width) * (x - 0.588 * width) <= 0 and (y - 0.48 * height) * (y - 0.576 * height) <= 0:
+        return True
+    else:
+        return False
+
+def is_mouse_in_out_box(x, y):
+    '''
+    Находится ли мышь на кнопке выход/меню
+    '''
+    if (x - 0.437 * width) * (x - 0.571 * width) <= 0 and (y - 0.6 * height) * (y - 0.648 * height) <= 0:
+        return True
+    else:
+        return False
+    
+def game_menu(rate, a, points):
+    '''
+    Меню
+    '''
+    x, y = pg.mouse.get_pos()
+    if not rate:
+        screen.fill((0, 0, 0))
+        font = pg.font.SysFont(None, 70)
+
+        img_name = font.render('Лучшая игра', True, (255, 255, 255))
+        screen.blit(img_name, (0.33 * width, 0.2 * height))
+
+        font = pg.font.SysFont(None, 50)
+        if is_mouse_in_start_box(x, y):
+            surface1.fill((205, 115, 0))
+        else:
+            surface1.fill((255, 165, 0))
+        if is_mouse_in_rate_box(x, y):
+            surface2.fill((205, 115, 0))
+        else:
+            surface2.fill((255, 165, 0))
+        if is_mouse_in_out_box(x, y):
+            surface3.fill((205, 115, 0))
+        else:
+            surface3.fill((255, 165, 0))
+        img = font.render('Старт', True, (255, 255, 255))
+        screen.blit(surface1, (0.45 * width, 0.405 * height))
+        screen.blit(img, (0.45 * width, 0.4 * height))
+
+        img1 = font.render('Таблица', True, (255, 255, 255))
+        img11 = font.render('лидеров', True, (255, 255, 255))
+        screen.blit(surface2, (0.418 * width, 0.48 * height))
+        screen.blit(img1, (0.425 * width, 0.48 * height))
+        screen.blit(img11, (0.42 * width, 0.52 * height))
+
+        img2 = font.render('Выход', True, (255, 255, 255))
+        screen.blit(surface3, (0.437 * width, 0.6 * height))
+        screen.blit(img2, (0.437 * width, 0.6 * height))
+    else:
+        screen.fill((0, 0, 0))
+        font = pg.font.SysFont(None, 50)
+
+        if points >= 0:
+            img_my_res = font.render('Ваш результат: ' + str(points), True, (255, 255, 255))
+            screen.blit(img_my_res, (0.35 * width, 0.05 * height))
+        
+        img = font.render('Лучшие результаты', True, (255, 255, 255))
+        screen.blit(img, (0.33 * width, 0.15 * height))
+
+        img = font.render(str(a[5]), True, (255, 255, 255))
+        screen.blit(img, (0.48 * width, 0.24 * height))
+
+        img = font.render(str(a[4]), True, (255, 255, 255))
+        screen.blit(img, (0.48 * width, 0.31 * height))
+
+        img = font.render(str(a[3]), True, (255, 255, 255))
+        screen.blit(img, (0.48 * width, 0.38 * height))
+
+        img = font.render(str(a[2]), True, (255, 255, 255))
+        screen.blit(img, (0.48 * width, 0.45 * height))
+
+        img = font.render(str(a[1]), True, (255, 255, 255))
+        screen.blit(img, (0.48 * width, 0.52 * height))
+
+        img3 = font.render('Меню', True, (255, 255, 255))
+        if is_mouse_in_out_box(x, y):
+            surface4.fill((205, 115, 0))
+        else:
+            surface4.fill((255, 165, 0))
+        screen.blit(surface4, (0.437 * width, 0.6 * height))
+        screen.blit(img3, (0.45 * width, 0.6 * height))
 
 def finish_menu(a, b, c, d, e, p):
     '''
@@ -79,6 +181,14 @@ def draw_backgrownd(time, points):
     '''
     counter(points)
     timer(time)
+
+def draw_pause():
+    '''
+    Рисует паузу
+    '''
+    font = pg.font.SysFont(None, 20)
+    img = font.render('Пауза. Нажмите пробел, чтобы продолжить', True, (255, 255, 255))
+    screen.blit(img, (0.35 * width, 0.5 * height))
 
 def tr_decrease(tr):
     tr['r'] = tr['r0'] * (1 - tr['time'] / tr['time_of_life'])
@@ -235,6 +345,10 @@ def click(event):
     return x, y
 
 def is_point_in_tr(x, y, tr):
+    '''
+    Проверка того, находится ли 
+    место клика в треугольнике
+    '''
     counter = 0
     rho_1 = (tr['x'] + tr['r'] * np.sin(tr['phi']) - x) ** 2 + (tr['y'] - tr['r'] * np.cos(tr['phi']) - y) ** 2
     rho_2 =  (tr['x'] + tr['r'] * np.sin(tr['phi'] + 2 * np.pi / 3) - x) ** 2 + (tr['y'] - tr['r'] * np.cos(tr['phi'] + 2 * np.pi / 3) - y) ** 2
@@ -250,95 +364,146 @@ def is_point_in_tr(x, y, tr):
     else:
         return False
 
-#pg.display.update()
-clock = pg.time.Clock()
-finished = False
-balls = []
-tr_s = []
-menu = False
-time = 20
-pause = False
+def start(menu, rate, finished):
+    '''
+    Начало игры
+    меню и таюлица лидеров
+    '''
+    while not menu:
+        clock.tick(FPS)
+        if not rate:
+            a = [0] * 6
+        game_menu(rate, a, -1)
+        pg.display.update()
+        '''
+        Кнопки
+        '''
+        for event in pg.event.get():
+            if event.type == pg.MOUSEBUTTONDOWN:
+                (cl_x, cl_y) = click(event)
+                if is_mouse_in_start_box(cl_x, cl_y):
+                    menu = True
+                if is_mouse_in_rate_box(cl_x, cl_y):
+                    rate = True
+                    inp = open(r'C:\Users\coolg\Desktop\top.txt', 'r')
+                    s = inp.readlines()
+                    a = []
+                    for i in s:
+                        a.append(int(i.rstrip()))
+                    a.append(0)
+                    a.sort()
+                    inp.close()
+                if is_mouse_in_out_box(cl_x, cl_y) and not rate:
+                    finished = True
+                    menu = True
+                if is_mouse_in_out_box(cl_x, cl_y) and rate:
+                    rate = False
+    return menu, rate, finished
 
-while not menu:
-    start_menu()
-    pg.display.update()
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
-            finished = True
-        elif event.type == pg.MOUSEBUTTONDOWN:
-            menu = True
+def game(finished, time, points, balls, tr_s):
+    '''
+    Тело игры
+    тут проходит сама игра
+    '''
+    while not finished and time > 0:
+        clock.tick(FPS)
+        pause = False
+        ball_to_del = []
+        tr_to_del = []
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                finished = True
+            elif event.type == KEYDOWN and event.key == K_SPACE:
+                pause = not pause
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                (cl_x, cl_y) = click(event)
+                for ball in balls:
+                    if (cl_x - ball['x']) ** 2 + (cl_y - ball['y']) ** 2 <= ball['r'] ** 2 and not pause:
+                        points += 1
+                        ball_to_del.append(ball)
+                for tr in tr_s:
+                    if is_point_in_tr(cl_x, cl_y, tr) == True and not pause:
+                        points += tr['r0'] / tr['r']
+                        tr_to_del.append(tr)
+        balls_clone = []
+        tr_s_clone = []
+        screen.fill((0, 0, 0))
+        for ball in balls:
+            if ball['time'] < ball['time_of_life'] and ball not in ball_to_del:
+                if not pause:
+                    ball = move_ball(dt, ball)
+                    circle(screen, ball['c'], (ball['x'], ball['y']), ball['r'])
+                balls_clone.append(ball)
+        for tr in tr_s:
+            if tr['time'] < tr['time_of_life'] and tr not in tr_to_del and tr['r'] > 10:
+                if not pause:
+                    tr = move_tr(dt, tr)
+                    draw_tr(tr)
+                tr_s_clone.append(tr)
+        balls = balls_clone
+        tr_s = tr_s_clone
+        if len(balls) < min_balls:
+            ball = create_ball()
+            balls.append(ball)
+        if len(tr_s) < min_tr_s:
+            tr = create_tr()
+            tr_s.append(tr)
+        if not pause:
+            draw_backgrownd(time, points)
+        else:
+            draw_pause()
+        if not pause:
+            time -= 1 / FPS
+        pg.display.update()
+    return finished, points, time
 
+def endgame(finished, points, menu):
+    '''
+    Конец игры
+    Результат игры и таблица лидеров
+    '''
+    while not finished and not menu:
+        clock.tick(FPS)
+        #finish_menu(a[5], a[4], a[3], a[2], a[1], int(points))
+        fin = points
+        rate = True
+        game_menu(rate, a, fin)
+        pg.display.update()
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                menu = True
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                (cl_x, cl_y) = click(event)
+                if is_mouse_in_out_box(cl_x, cl_y) and rate:
+                    rate = False
+                    menu = True
 
-while not finished and time > 0 :
-    clock.tick(FPS)
-    ball_to_del = []
-    tr_to_del = []
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
-            finished = True
-        elif event.type == KEYDOWN and event.key == K_SPACE:
-            pause = not pause
-        elif event.type == pg.MOUSEBUTTONDOWN:
-            (cl_x, cl_y) = click(event)
-            for ball in balls:
-                if (cl_x - ball['x']) ** 2 + (cl_y - ball['y']) ** 2 <= ball['r'] ** 2:
-                    points += 1
-                    ball_to_del.append(ball)
-            for tr in tr_s:
-                if is_point_in_tr(cl_x, cl_y, tr) == True:
-                    points += tr['r0'] / tr['r']
-                    tr_to_del.append(tr)
-    balls_clone = []
-    tr_s_clone = []
-    screen.fill((0, 0, 0))
-    for ball in balls:
-        if ball['time'] < ball['time_of_life'] and ball not in ball_to_del:
-            if not pause:
-                ball = move_ball(dt, ball)
-            circle(screen, ball['c'], (ball['x'], ball['y']), ball['r'])
-            balls_clone.append(ball)
-    for tr in tr_s:
-        if tr['time'] < tr['time_of_life'] and tr not in tr_to_del and tr['r'] > 10:
-            if not pause:
-                tr = move_tr(dt, tr)
-            draw_tr(tr)
-            tr_s_clone.append(tr)
-    balls = balls_clone
-    tr_s = tr_s_clone
-    if len(balls) < min_balls:
-        ball = create_ball()
-        balls.append(ball)
-    if len(tr_s) < min_tr_s:
-        tr = create_tr()
-        tr_s.append(tr)
-    draw_backgrownd(time, points)
-    time -= 1 / FPS
-    pg.display.update()
-
-menu = False
-inp = open(r'C:\Users\coolg\Desktop\top.txt', 'r')
-s = inp.readlines()
-a = []
-for i in s:
-    a.append(int(i.rstrip()))
-a.append(int(points))
-a.sort()
-inp.close()
-print(a)
-out = open(r'C:\Users\coolg\Desktop\top.txt', 'w')
-print(a[5], file=out)
-print(a[4], file=out)
-print(a[3], file=out)
-print(a[2], file=out)
-print(a[1], file=out)
-out.close()
-while not menu:
-    finish_menu(a[5], a[4], a[3], a[2], a[1], int(points))
-    pg.display.update()
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
-            menu = True
-        elif event.type == pg.MOUSEBUTTONDOWN:
-            menu = True
+fin = False
+men = False
+while not fin:
+    '''
+    Основной цикл
+    '''
+    men, rate, fin = start(menu = men, rate = False, finished = fin)
+    fin, points, time = game(finished = fin, time = 1, points = 0, balls = [], tr_s = [])
+    if time <= 0: #Костыль для выходного меню
+        fin = False
+        men = False
+    inp = open(r'C:\Users\coolg\Desktop\top.txt', 'r')
+    s = inp.readlines()
+    a = []
+    for i in s:
+        a.append(int(i.rstrip()))
+    a.append(int(points))
+    a.sort()
+    inp.close()
+    out = open(r'C:\Users\coolg\Desktop\top.txt', 'w')
+    print(a[5], file=out)
+    print(a[4], file=out)
+    print(a[3], file=out)
+    print(a[2], file=out)
+    print(a[1], file=out)
+    out.close()
+    endgame(fin, points, men)
 
 pg.quit()
