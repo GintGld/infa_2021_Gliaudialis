@@ -103,7 +103,7 @@ def game_menu(rate, a, points):
         font = pg.font.SysFont(None, 50)
 
         if points >= 0:
-            img_my_res = font.render('Ваш результат: ' + str(points), True, (255, 255, 255))
+            img_my_res = font.render('Ваш результат: ' + str(int(points)), True, (255, 255, 255))
             screen.blit(img_my_res, (0.35 * width, 0.05 * height))
         
         img = font.render('Лучшие результаты', True, (255, 255, 255))
