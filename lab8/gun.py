@@ -23,7 +23,7 @@ HEIGHT = 600
 g = 3
 #Параметры пушки
 h = 7
-l_0 = 5
+l_0 = 6
 d = 3
 
 class Ball:
@@ -169,7 +169,7 @@ class Target:
         """ Инициализация новой цели. """
         self.r = rn.randint(10, 40)
         self.x = rn.randint(0.5 * WIDTH, WIDTH - self.r)
-        self.y = rn.randint(self.r, HEIGHT - self.r)
+        self.y = rn.randint(self.r, 455 - self.r)
         self.vx = rn.randint(0, 10)
         self.vy = rn.randint(0, 10)
         self.color = RED
@@ -187,7 +187,7 @@ class Target:
             self.vx *= -1
         if self.y <= self.r and self.vy > 0:
             self.vy *= -1
-        if self.y >= HEIGHT - self.r and self.vy < 0:
+        if self.y >= 455 - self.r and self.vy < 0:
             self.vy *= -1
         self.live -= 1
 
@@ -217,7 +217,7 @@ class Targ_sin:
         Конструктор новой мишени
         '''
         self.x = WIDTH
-        self.y0 = rn.randint(0, 0.6 * HEIGHT)
+        self.y0 = rn.randint(0, 0.5 * HEIGHT)
         self.y = self.y0
         self.r = rn.randint(15, 30)
         self.phi = rn.randint(0, 360)
@@ -285,6 +285,7 @@ class Gun:
         Индикатор начала накопления энергии пушки
         '''
         self.f2_on = 1
+        self.act_col = rn.choice(GAME_COLORS)
 
     def power_up(self):
         '''
@@ -374,10 +375,27 @@ class Gun:
         '''
         Рисует пушку
         '''
-        #pygame.draw.polygon(screen, GREEN,
-        #[
-        #    ()
-        #])
+        pygame.draw.polygon(screen, 0x3B1E08,
+        [
+            (self.x - 4 * h, self.y + 2 * d),
+            (self.x - 3 * h, self.y - 2 * d),
+            (self.x + 3 * h, self.y - 2 * d),
+            (self.x + 4 * h, self.y + 2 * d)
+        ])
+        pygame.draw.aalines(screen, BLACK, True,
+        [
+            (self.x - 4 * h, self.y + 2 * d),
+            (self.x - 3 * h, self.y - 2 * d),
+            (self.x + 3 * h, self.y - 2 * d),
+            (self.x + 4 * h, self.y + 2 * d)
+        ])
+        pygame.draw.circle(screen, GREY, (self.x - 4 * h, self.y + 4 * d), 2 * d)
+        pygame.draw.circle(screen, GREY, (self.x + 4 * h, self.y + 4 * d), 2 * d)
+        pygame.draw.circle(screen, BLACK, (self.x - 4 * h, self.y + 4 * d), 2 * d, 2)
+        pygame.draw.circle(screen, BLACK, (self.x + 4 * h, self.y + 4 * d), 2 * d, 2)
+        pygame.draw.rect(screen, GREY, (self.x - 4 * h, self.y + 2 * d, 8 * h, 4 * d))
+        pygame.draw.line(screen, BLACK, (self.x - 4 * h, self.y + 2 * d), (self.x + 4 * h, self.y + 2 * d))
+        pygame.draw.line(screen, BLACK, (self.x - 4 * h, self.y + 6 * d), (self.x + 4 * h, self.y + 6 * d))
 
 
         x, y = pygame.mouse.get_pos()
