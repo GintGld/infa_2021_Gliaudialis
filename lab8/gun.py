@@ -18,6 +18,7 @@ GAME_COLORS = [RED, BLUE, YELLOW, GREEN, MAGENTA, CYAN]
 
 WIDTH = 800
 HEIGHT = 600
+Grass = 455
 
 #Ускорение свободного падения
 g = 3
@@ -169,7 +170,7 @@ class Target:
         """ Инициализация новой цели. """
         self.r = rn.randint(10, 40)
         self.x = rn.randint(0.5 * WIDTH, WIDTH - self.r)
-        self.y = rn.randint(self.r, 455 - self.r)
+        self.y = rn.randint(self.r, Grass - self.r)
         self.vx = rn.randint(0, 10)
         self.vy = rn.randint(0, 10)
         self.color = RED
@@ -187,7 +188,7 @@ class Target:
             self.vx *= -1
         if self.y <= self.r and self.vy > 0:
             self.vy *= -1
-        if self.y >= 455 - self.r and self.vy < 0:
+        if self.y >= Grass - self.r and self.vy < 0:
             self.vy *= -1
         self.live -= 1
 
@@ -217,7 +218,7 @@ class Targ_sin:
         Конструктор новой мишени
         '''
         self.x = WIDTH
-        self.y0 = rn.randint(0, 0.5 * HEIGHT)
+        self.y0 = rn.randint(0, 0.4 * HEIGHT)
         self.y = self.y0
         self.r = rn.randint(15, 30)
         self.phi = rn.randint(0, 360)
@@ -266,7 +267,7 @@ class Gun:
         self.color = BLACK
         self.act_col = rn.choice(GAME_COLORS)
         self.button = 0
-        self.x0 = 20
+        self.x0 = 80
         self.y0 = 450
         self.vx = 2
         self.vy = 2
@@ -277,8 +278,14 @@ class Gun:
         '''
         Двигает пушку
         '''
-        self.x += v_h * self.vx
-        self.y += v_v * self.vy
+        if self.x >= 6 * h and self.x <= WIDTH - 6 * h:
+            self.x += v_h * self.vx
+        elif self.x < 6 * h: self.x = 6 * h
+        elif self.x > WIDTH - 6 * h: self.x = WIDTH - 6 * h
+        if self.y >= Grass - 6 * d and self.y <= HEIGHT - 6 * d:
+            self.y += v_v * self.vy
+        elif self.y < Grass - 6 * d: self.y = Grass - 6 * d
+        elif self.y > HEIGHT - 6 * d: self.y = HEIGHT - 6 * d
 
     def fire2_start(self):
         '''
@@ -308,7 +315,7 @@ class Gun:
         new_ball = Ball(self.screen)
         new_ball.r += 5
         self.an = np.arctan((event.pos[1] - self.y) / (event.pos[0] - self.x))
-        l = l_0 * self.f2_power
+        l = l_0 #* self.f2_power
         new_ball.x = self.x + (l - d) * np.cos(self.an)
         new_ball.y = self.y + (l - d) * np.sin(self.an)
         new_ball.color = self.act_col
@@ -332,7 +339,7 @@ class Gun:
         n = int(3 * (1 - np.exp(-3 * self.f2_power))) #int(self.f2_power * 0.1) 
         bullet += 1 + 2 * n
         self.an = np.arctan((event.pos[1] - self.y) / (event.pos[0] - self.x))
-        l = l_0 * self.f2_power
+        l = l_0 #* self.f2_power
 
         new_shot = Shot(screen)
         new_shot.an = self.an
@@ -434,7 +441,7 @@ def draw_all(targets, targ_sin, balls, shots, gun):
     Отрисовывание всего
     '''
     screen.fill(WHITE)
-    pygame.draw.rect(screen, 0x74B72E, (0, 455, WIDTH, HEIGHT - 450))
+    pygame.draw.rect(screen, 0x74B72E, (0, Grass, WIDTH, HEIGHT - 450))
     counter(points)
     for t in targets:
         t.draw()
@@ -467,22 +474,25 @@ def events(gun, v_w, v_s, v_a, v_d, balls, shots, bullet, finished):
             gun.button = 0
         elif event.type == pygame.MOUSEMOTION:
             gun.targetting()
-        #if event.type == pygame.KEYDOWN:
         if pygame.key.get_pressed()[pygame.K_w]: v_w = -1
+        else: v_w = 0
         if pygame.key.get_pressed()[pygame.K_s]: v_s = 1
+        else: v_s = 0
         if pygame.key.get_pressed()[pygame.K_a]: v_a = -1
+        else: v_a = 0
         if pygame.key.get_pressed()[pygame.K_d]: v_d = 1
-        if not pygame.key.get_pressed()[pygame.K_w]: v_w = 0
-        if not pygame.key.get_pressed()[pygame.K_s]: v_s = 0
-        if not pygame.key.get_pressed()[pygame.K_a]: v_a = 0
-        if not pygame.key.get_pressed()[pygame.K_d]: v_d = 0
-    return gun, v_w + v_s, v_a + v_d, balls, shots, bullet, finished
+        else: v_d = 0
+        #if not pygame.key.get_pressed()[pygame.K_w]: v_w = 0
+        #if not pygame.key.get_pressed()[pygame.K_s]: v_s = 0
+        #if not pygame.key.get_pressed()[pygame.K_a]: v_a = 0
+        #if not pygame.key.get_pressed()[pygame.K_d]: v_d = 0
+    return gun, v_w, v_s, v_a,  v_d, balls, shots, bullet, finished
 
-def move_all(gun, v_v, v_h, balls, shots, targets, targ_sin):
+def move_all(gun, v_w, v_s, v_a, v_d, balls, shots, targets, targ_sin):
     '''
     Движение всего
     '''
-    gun.move(v_v, v_h)
+    gun.move(v_w + v_s, v_a + v_d)
     ball_clone = []
     shots_clone = []
     target_clone = []
@@ -571,7 +581,7 @@ def result(bullet, i, again, finished):
     font = pygame.font.SysFont(None, 40)
     if bullet % 10 == 1:
         img = font.render('Вы уничтожили цель за ' + str(bullet) + ' выстрел', True, (0, 0, 0))
-    elif bullet % 10 > 1 and points % 10 < 5:
+    elif bullet % 10 > 1 and bullet % 10 < 5:
         img = font.render('Вы уничтожили цель за ' + str(bullet) + ' выстрела', True, (0, 0, 0))
     elif bullet % 10 > 4 or bullet % 10 == 0:
         img = font.render('Вы уничтожили цель за ' + str(bullet) + ' выстрелов', True, (0, 0, 0))
@@ -608,9 +618,9 @@ while not finished:
     if not again:
         draw_all(targets, targ_sin, balls, shots, gun)
             
-        gun, v_v, v_h, balls, shots, bullet, finished = events(gun, v_w, v_s, v_a, v_d, balls, shots, bullet, finished)
+        gun, v_w, v_s, v_a, v_d, balls, shots, bullet, finished = events(gun, v_w, v_s, v_a, v_d, balls, shots, bullet, finished)
 
-        gun, balls, shots, targets, targ_sin = move_all(gun, v_v, v_h, balls, shots, targets, targ_sin)
+        gun, balls, shots, targets, targ_sin = move_all(gun, v_w, v_s, v_a, v_d, balls, shots, targets, targ_sin)
 
         points, again, i = hits(balls, shots, targets, targ_sin, points, again)
 
