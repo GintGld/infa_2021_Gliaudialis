@@ -20,12 +20,36 @@ WIDTH = 800
 HEIGHT = 600
 Grass = 455
 
+'''
+                                                Игра
+                        Правила:
+                        1) Танк ездит по траве (зеленая)
+                        2) Танк стреляет двумя снарядами: ядрами и дробью
+                        3) У дроби есть "откат"
+                        4) За сбивание самолетов дают баллы
+                        5) Самолеты сбрасывают бомбы, наносящие урон танку
+                        6) Голубые облака при сбитии обнуляют "откат" дроби
+                        7) Красная мишень восстанавливает здоровье
+                        8) Когда полоска жизни упадет до 0, игра заканчивается
+'''
+
 #Ускорение свободного падения
 g = 3
 #Параметры пушки
 h = 7
 l_0 = 6
 d = 3
+
+class Track:
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.a = 20
+        self.b = 10
+        self.live = 50
+    
+    def draw(self):
+        pygame.draw.ellipse(screen, BLACK, (self.x - 0.5 * self.a, self.y - 0.5 * self.b, self.a, self.b))
 
 class Ball:
     def __init__(self, screen: pygame.Surface):
@@ -50,14 +74,14 @@ class Ball:
         self.x += self.vx
         self.y -= self.vy
         self.vy -= g
-        if self.vy > 0 and self.y <= self.r:
-            self.vy *= -0.6
+        #if self.vy > 0 and self.y <= self.r:
+        #    self.vy *= -0.6
         if self.vy < 0 and self.y >= self.bottom: #HEIGHT - self.r:
             self.vy *= -0.6
-        if self.vx < 0 and self.x <= self.r:
-            self.vx *= -0.6
-        if self.vx > 0 and self.x >= WIDTH - self.r:
-            self.vx *= -0.6
+        #if self.vx < 0 and self.x <= self.r:
+        #    self.vx *= -0.6
+        #if self.vx > 0 and self.x >= WIDTH - self.r:
+        #    self.vx *= -0.6
 
     def draw(self):
         '''
@@ -105,6 +129,8 @@ class Ball:
                 return True
             elif (obj.x - obj.l1 - self.x) ** 2 + (obj.y + obj.d - self.y) ** 2 <= self.r ** 2:
                 return True
+            elif self.y - obj.y <= obj.h + self.r and self.x >= obj.x - obj.l1 + self.r and self.x <= obj.x + obj.l2 + self.r:
+                return True
             else:
                 return False
 
@@ -122,10 +148,10 @@ class Shot:
         self.an = 0
         self.color = rn.choice(GAME_COLORS)
         self.live = 150
-        self.l = 5
-        self.d = 1
-        self.k = 2
-        self.h = 7
+        self.l = 7.5
+        self.d = 1.5
+        self.k = 3
+        self.h = 9
         
     def move(self):
         """
@@ -195,6 +221,8 @@ class Shot:
                 return True
             elif (obj.x - obj.l1 - (self.x + (self.l + self.k) * np.cos(self.an))) ** 2 + (obj.y + obj.d - (self.y + (self.l + self.k) * np.sin(self.an))) ** 2 <= self.r ** 2:
                 return True
+            elif self.y + (self.l + self.k) * np.sin(self.an) - obj.y <= obj.h and self.x + (self.l + self.k) * np.cos(self.an) >= obj.x - obj.l1 and self.x + (self.l + self.k) * np.cos(self.an) <= obj.x + obj.l2:
+                return True
             else:
                 return False
 
@@ -203,6 +231,7 @@ class Bomb:
         """
         Конструктор класса bomb
         """
+        self.type = 'bomb'
         self.screen = screen
         self.x = 0
         self.y = 0
@@ -211,24 +240,29 @@ class Bomb:
         self.vy = 0
         self.an = 0
         self.color = BLACK
-        self.live = 150
+        self.live = 1
         self.l = 10
         self.d = 2
         self.k = 8
         self.h = 14
+        self.bottom = 0
         
     def move(self):
         """
         Переместить мяч
         """
         #self.live -= 1
-        self.vy -= 3
+        self.vy -= 0.5
         self.x += self.vx
         self.y -= self.vy
         if self.vy > 0 and self.y <= self.r:
             self.live = 0
-        if self.vy < 0 and self.y >= HEIGHT - self.r:
+        if self.vy < 0 and self.y >= self.bottom:
             self.live = 0
+            new_tr = Track()
+            new_tr.x = self.x + (self.l + self.k) * np.cos(self.an)
+            new_tr.y = self.y + (self.l + self.k) * np.sin(self.an)
+            tracks.append(new_tr)
         #if self.vx < 0 and self.x <= self.r:
         #    self.live = 0
         #if self.vx > 0 and self.x >= WIDTH - self.r:
@@ -263,7 +297,7 @@ class Bomb:
         ])
         
 
-    def hittest(self, obj):
+    def hittest(self, tank):
         """Функция проверяет сталкивалкивается ли данный обьект с целью, описываемой в обьекте obj.
 
         Args:
@@ -271,30 +305,12 @@ class Bomb:
         Returns:
             Возвращает True в случае столкновения мяча и цели. В противном случае возвращает False.
         """
-        l = 5
-        k = 2
-        if obj.type != 'air':
-            if (obj.x - (self.x + (self.l + self.k) * np.cos(self.an))) ** 2 + (obj.y - (self.y + (self.l + self.k) * np.sin(self.an))) ** 2 <= obj.r ** 2:
-                return True
-            else:
-                return False
-        if obj.type == 'air':
-            if (obj.x - obj.l - (self.x + (self.l + self.k) * np.cos(self.an))) ** 2 + (obj.y - (self.y + (self.l + self.k) * np.sin(self.an))) ** 2 <= self.r ** 2:
-                return True
-            elif (obj.x - obj.l1 - (self.x + (self.l + self.k) * np.cos(self.an))) ** 2 + (obj.y - obj.d - (self.y + (self.l + self.k) * np.sin(self.an))) ** 2 <= self.r ** 2:
-                return True
-            elif (obj.x + 2 * obj.q - (self.x + (self.l + self.k) * np.cos(self.an))) ** 2 + (obj.y - obj.h - (self.y + (self.l + self.k) * np.sin(self.an))) ** 2 <= self.r ** 2:
-                return True
-            elif (obj.x + obj.l2 + 3 * obj.q - (self.x + (self.l + self.k) * np.cos(self.an))) ** 2 + (obj.y - obj.h1 - (self.y + (self.l + self.k) * np.sin(self.an))) ** 2 <= self.r ** 2:
-                return True
-            elif (obj.x + obj.l2 - (self.x + (self.l + self.k) * np.cos(self.an))) ** 2 + (obj.y + obj.d - (self.y + (self.l + self.k) * np.sin(self.an))) ** 2 <= self.r ** 2:
-                return True
-            elif (obj.x - obj.q - (self.x + (self.l + self.k) * np.cos(self.an))) ** 2 + (obj.y + obj.h - (self.y + (self.l + self.k) * np.sin(self.an))) ** 2 <= self.r ** 2:
-                return True
-            elif (obj.x - obj.l1 - (self.x + (self.l + self.k) * np.cos(self.an))) ** 2 + (obj.y + obj.d - (self.y + (self.l + self.k) * np.sin(self.an))) ** 2 <= self.r ** 2:
-                return True
-            else:
-                return False
+        x = self.x + (self.l + self.k) * np.cos(self.an)
+        y = self.y + (self.l + self.k) * np.sin(self.an)
+        if y - tank.y >= 2 * d and h * y - 4 * d * x - h * tank.y + 4 * d * tank.x + 14 * d * h > 0 and h * y + 4 * d * x - h * tank.y - 4 * d * tank.x + 14 * d * h > 0:
+            return True
+        else:
+            return False
 
 class Target:
     def __init__(self):
@@ -306,7 +322,7 @@ class Target:
         self.vx = rn.randint(0, 10)
         self.vy = rn.randint(0, 10)
         self.color = RED
-        self.live = rn.randint(80, 200)
+        self.live = 200 #rn.randint(80, 200)
 
     def move(self):
         '''
@@ -360,9 +376,9 @@ class Targ_sin:
         if self.a + self.r > self.y0: self.a = 0.5 * (self.y0 - self.r)
         self.w = rn.random() * 0.5
         self.color = rn.choice(GAME_COLORS)
-        self.time = rn.randint(50, 100)
+        self.time = 200 #rn.randint(50, 100)
         self.live = self.time
-        self.vx = rn.randint(10, 30)
+        self.vx = rn.randint(10, 30) * 0.5
         self.vy = self.a * self.w * np.cos(self.w * (self.time - self.live) + self.phi)
     
     def move(self):
@@ -406,7 +422,8 @@ class Airplane:
             self.x0 = WIDTH + self.l
         if self.vect == -1:
             self.x0 = -self.l
-        self.y0 = rn.random() * (0.5 * Grass - self.h) + (0.5 * Grass + self.h) / 2
+        self.par = rn.random() - 0.5
+        self.y0 = self.par * (0.5 * Grass - self.h) + (0.5 * Grass + self.h) / 2
         self.vx = rn.randint(5, 15) * self.vect
         self.x = self.x0
         self.y = self.y0
@@ -496,7 +513,7 @@ class Gun:
         '''
         if self.f2_on:
             if self.f2_power < 60:
-                self.f2_power += 0.5
+                self.f2_power += 1
             self.color = self.act_col
         else:
             self.color = BLACK
@@ -646,23 +663,32 @@ def counter(points):
     img = font.render(str(points), True, (0, 0, 0))
     screen.blit(img, (0.05 * WIDTH, 0.05 * HEIGHT))
 
+def live(hp):
+    pygame.draw.rect(screen, BLACK, (0.02 * WIDTH, 0.97 * HEIGHT, 0.15 * WIDTH, 0.02 * HEIGHT), 2)
+    pygame.draw.rect(screen, WHITE, (0.02 * WIDTH, 0.97 * HEIGHT, 0.15 * WIDTH, 0.02 * HEIGHT))
+    pygame.draw.rect(screen, RED, (0.02 * WIDTH, 0.97 * HEIGHT, 0.15 * WIDTH * hp / 100, 0.02 * HEIGHT))
+
 def cooldown(timer, cldn, time_cldn):
     '''
     Откат сильной атаки
     '''
-    pygame.draw.rect(screen, BLACK, (0.02 * WIDTH, 0.97 * HEIGHT, 0.15 * WIDTH, 0.02 * HEIGHT), 2)
-    pygame.draw.rect(screen, WHITE, (0.02 * WIDTH, 0.97 * HEIGHT, 0.15 * WIDTH, 0.02 * HEIGHT))
-    pygame.draw.rect(screen, (173, 216, 230), (0.02 * WIDTH, 0.97 * HEIGHT, 0.15 * WIDTH * (timer - time_cldn) / timer, 0.02 * HEIGHT))
+    pygame.draw.rect(screen, BLACK, (0.02 * WIDTH, 0.94 * HEIGHT, 0.15 * WIDTH, 0.02 * HEIGHT), 2)
+    pygame.draw.rect(screen, WHITE, (0.02 * WIDTH, 0.94 * HEIGHT, 0.15 * WIDTH, 0.02 * HEIGHT))
+    pygame.draw.rect(screen, (173, 216, 230), (0.02 * WIDTH, 0.94 * HEIGHT, 0.15 * WIDTH * (timer - time_cldn) / timer, 0.02 * HEIGHT))
     if time_cldn <= 0: cldn = False
-    if cldn: time_cldn -= 1
+    if cldn: time_cldn -= 0.25
     return cldn, time_cldn
 
-def draw_all(targets, targ_sin, airplanes, bombs, balls, shots, gun, cldn, time_cldn):
+def draw_all(targets, targ_sin, airplanes, bombs, balls, shots, tracks, gun, cldn, time_cldn, hp):
     '''
     Отрисовывание всего
     '''
     screen.fill(WHITE)
     pygame.draw.rect(screen, 0x74B72E, (0, Grass, WIDTH, HEIGHT - Grass))
+    for tr in tracks:
+        if tr.live > 0:
+            tr.draw()
+            tr.live -= 1
     for t in targets:
         t.draw()
     for t_s in targ_sin:
@@ -677,6 +703,7 @@ def draw_all(targets, targ_sin, airplanes, bombs, balls, shots, gun, cldn, time_
         bomb.draw()
     gun.draw()
     counter(points)
+    hp = live(hp)
     cldn, time_cldn = cooldown(100, cldn, time_cldn)
     pygame.display.update()
     return cldn, time_cldn
@@ -762,14 +789,15 @@ def move_all(gun, v_w, v_s, v_a, v_d, balls, shots, targets, targ_sin, airplanes
         if air.live == 1:
             airplanes_clone.append(air)
             rand = rn.random()
-            if rand < 0.1 and air.time_to_bomb <= 0:
+            if rand < 0.45ds and air.time_to_bomb <= 0:
                 new_bomb = Bomb(screen)
                 new_bomb.x = air.x
                 new_bomb.y = air.y
                 new_bomb.vx = -air.vx
                 new_bomb.an = 0.5 * np.pi - 0.5 * np.pi * air.vect
                 bombs.append(new_bomb)
-                air.time_to_bomb = 60
+                air.time_to_bomb = 30
+                new_bomb.bottom = 0.5 * (HEIGHT - Grass) * air.par + 0.5 * (HEIGHT + Grass)
         air.move()
     airplanes = airplanes_clone
 
@@ -781,68 +809,70 @@ def move_all(gun, v_w, v_s, v_a, v_d, balls, shots, targets, targ_sin, airplanes
 
     return gun, balls, shots, targets, targ_sin, airplanes, bombs
 
-def hits(balls, shots, targets, targ_sin, airplanes, points, again):
+def hits(balls, shots, targets, targ_sin, airplanes, hp, points, time_cldn, again):
     '''
     Проверка на столкновения
     '''
     for b in balls:
         for t in targets:
             if b.hittest(t):
-                points += 1
+                #points += 1
                 t.live = 0
-                again = True
-                #i = 0
-                #break
+                b.live = 0
+                hp += 40
+                hp = min(hp, 100)
         for t_s in targ_sin:
             if b.hittest(t_s):
-                points += 1
+                #points += 1
                 t_s.live = 0
-                again = True
-                #i = 0
-                #break
+                b.live = 0
+                time_cldn = 0
         for air in airplanes:
             if b.hittest(air):
                 points += 1
                 air.live = 0
-                againt = True
+                b.live = 0
     for sh in shots:
         for t in targets:
             if sh.hittest(t):
-                points += 1
+                #points += 1
                 t.live = 0
                 sh.live = 0
-                again = True
-                #i = 0
-                #break
+                hp += 40
+                hp = min(hp, 100)
         for t_s in targ_sin:
             if sh.hittest(t_s):
-                points += 1
-                t_s.live = 0
+                #points += 1
                 sh.live = 0
-                again = True
-                #i = 0
-                #break
+                time_cldn = 0
         for air in airplanes:
             if sh.hittest(air):
                 points += 1
                 air.live = 0
-                againt = True
-    return points, again, 0
+                sh.live = 0
+    for bomb in bombs:
+        if bomb.hittest(gun) and bomb.live != 0:
+            hp -= 15
+            bomb.live = 0
+            return points, again, 0, hp, time_cldn
+    return points, again, 0, hp, time_cldn
 
 def more_targ(targets, targ_sin, airplanes):
     '''
     Добавляет нужные мишени
     '''
-    if len(targets) < -1:
+    rand = rn.random()
+    if len(targets) < 1 and rand < 0.01:
         targets.append(Target())
-    if len(targ_sin) < -1:
+    rand = rn.random()
+    if len(targ_sin) < 1 and rand < 0.01:
         targ_sin.append(Targ_sin())
     rand = rn.random()
     if len(airplanes) < 6 and rand < 0.05:
         airplanes.append(Airplane())
     return targets, targ_sin, airplanes
 
-def result(bullet, i, again, finished):
+def result(points, i, again, finished):
     '''
     Вывод результата игры
     экран с надписью 
@@ -853,21 +883,20 @@ def result(bullet, i, again, finished):
         if event.type == pygame.QUIT:
             finished = True
     screen.fill(WHITE)
-    counter(points)
+    #counter(points)
     font = pygame.font.SysFont(None, 40)
-    if bullet % 10 == 1:
-        img = font.render('Вы уничтожили цель за ' + str(bullet) + ' выстрел', True, (0, 0, 0))
-    elif bullet % 10 > 1 and bullet % 10 < 5:
-        img = font.render('Вы уничтожили цель за ' + str(bullet) + ' выстрела', True, (0, 0, 0))
-    elif bullet % 10 > 4 or bullet % 10 == 0:
-        img = font.render('Вы уничтожили цель за ' + str(bullet) + ' выстрелов', True, (0, 0, 0))
-    screen.blit(img, (0.2 * WIDTH, 0.45 * HEIGHT))
+    if points % 10 == 1:
+        img = font.render('Вы набрали ' + str(points) + ' балл', True, (0, 0, 0))
+    elif points % 10 > 1 and points % 10 < 5:
+        img = font.render('Вы набрали ' + str(points) + ' балла', True, (0, 0, 0))
+    elif points % 10 > 4 or points % 10 == 0:
+        img = font.render('Вы набрали ' + str(points) + ' баллов', True, (0, 0, 0))
+    screen.blit(img, (0.32 * WIDTH, 0.45 * HEIGHT))
     pygame.display.update()
     i += 1
     if i >= time_of_pause:
         again = False
-        bullet = 0
-    return bullet, i, again, finished
+    return i, again, finished
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -885,8 +914,10 @@ targets = []
 targ_sin = []
 airplanes = []
 bombs = []
+tracks = []
 i = 0
 time_cldn = 0
+hp = 100
 
 clock = pygame.time.Clock()
 gun = Gun(screen)
@@ -896,25 +927,30 @@ cldn = False
 
 while not finished:
     if not again:
-        cldn, time_cldn = draw_all(targets, targ_sin, airplanes, bombs, balls, shots, gun, cldn, time_cldn)
+        cldn, time_cldn = draw_all(targets, targ_sin, airplanes, bombs, balls, shots, tracks, gun, cldn, time_cldn, hp)
 
         gun, v_w, v_s, v_a, v_d, balls, shots, bullet, finished, cldn, time_cldn = events(gun, v_w, v_s, v_a, v_d, balls, shots, bullet, finished, cldn, time_cldn)
 
         gun, balls, shots, targets, targ_sin, airplanes, bombs = move_all(gun, v_w, v_s, v_a, v_d, balls, shots, targets, targ_sin, airplanes, bombs)
 
-        points, again, i = hits(balls, shots, targets, targ_sin, airplanes, points, again)
+        points, again, i, hp, time_cldn = hits(balls, shots, targets, targ_sin, airplanes, hp, points, time_cldn, again)
 
         targets, targ_sin, airplanes = more_targ(targets, targ_sin, airplanes)
 
         gun.power_up()
 
-    again = False #отключение вывода результатов
+    if hp <= 0:
+        again = True
 
     if again:
         balls = []
         shots = []
         targets = []
         targ_sin = []
-        bullet, i, again, finished = result(bullet, i, again, finished)
+        airplanes = []
+        bombs = []
+        tracks = []
+        i, again, finished = result(points, i, again, finished)
+        hp = 100
 
 pygame.quit()
