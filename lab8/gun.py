@@ -2,7 +2,8 @@ import numpy as np
 import random as rn
 import pygame
 
-
+pygame.init()
+font = pygame.font.SysFont(None, 40)
 FPS = 30
 
 RED = 0xFF0000
@@ -39,6 +40,36 @@ g = 3
 h = 7
 l_0 = 6
 d = 3
+
+class Button:
+    def __init__(self, text, h):
+        self.text = text
+        self.t = font.render(text, True, BLACK)
+        self.width = self.t.get_rect().width
+        self.height = self.t.get_rect().height
+        self.h = h
+        self.active = 0
+        self.color = 0xBE5504
+        self.act_color = 0x7A3803
+        self.text_rect = self.t.get_rect(center=(WIDTH // 2, self.h))
+        print(self.width, self.height)
+
+    def mouse_check(self):
+        x, y = pygame.mouse.get_pos()
+        if abs(WIDTH // 2 - x) <= self.width / 2 and np.abs(self.h - y) < self.height / 2:
+            self.active = 1
+        else:
+            self.active = 0
+
+    def draw(self):
+        c = self.color
+        if self.active == 1:
+            c = self.act_color
+        #self.t.fill(c)
+        #screen.blit(self.t, (WIDTH // 2 - self.width, self.h))
+        text = font.render(self.text, True, c)
+        text_rect = text.get_rect(center = (WIDTH // 2, self.h))
+        screen.blit(text, text_rect)
 
 class Track:
     def __init__(self):
@@ -482,8 +513,8 @@ class Gun:
         self.button = 0
         self.x0 = 80
         self.y0 = 450
-        self.vx = 3
-        self.vy = 3
+        self.vx = 4
+        self.vy = 4
         self.x = self.x0
         self.y = self.y0
 
@@ -679,6 +710,33 @@ def cooldown(timer, cldn, time_cldn):
     if cldn: time_cldn -= 0.25
     return cldn, time_cldn
 
+def menu(Menu, finished):
+    screen.fill(WHITE)
+
+    start_button.mouse_check()
+    exit_button.mouse_check()
+
+    font = pygame.font.SysFont(None, 70)
+    name = font.render('Лучшая игра 2', True, start_button.color)
+    name_rect = name.get_rect(center = (WIDTH // 2, 100))
+    screen.blit(name, name_rect)
+    font = pygame.font.SysFont(None, 40)
+    start_button.draw()
+    exit_button.draw()
+    pygame.display.update()
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            finished = True
+            Menu = False
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if start_button.active == 1:
+                Menu = False
+            elif exit_button.active == 1:
+                finished = True
+                Menu = False
+    return Menu, finished
+
 def draw_all(targets, targ_sin, airplanes, bombs, balls, shots, tracks, gun, cldn, time_cldn, hp):
     '''
     Отрисовывание всего
@@ -789,14 +847,15 @@ def move_all(gun, v_w, v_s, v_a, v_d, balls, shots, targets, targ_sin, airplanes
         if air.live == 1:
             airplanes_clone.append(air)
             rand = rn.random()
-            if rand < 0.45ds and air.time_to_bomb <= 0:
+            if rand < 0.65 and air.time_to_bomb <= 0 or rand < 0.03:
                 new_bomb = Bomb(screen)
                 new_bomb.x = air.x
                 new_bomb.y = air.y
                 new_bomb.vx = -air.vx
                 new_bomb.an = 0.5 * np.pi - 0.5 * np.pi * air.vect
                 bombs.append(new_bomb)
-                air.time_to_bomb = 30
+                if air.time_to_bomb <= 0:
+                    air.time_to_bomb = 30
                 new_bomb.bottom = 0.5 * (HEIGHT - Grass) * air.par + 0.5 * (HEIGHT + Grass)
         air.move()
     airplanes = airplanes_clone
@@ -886,11 +945,11 @@ def result(points, i, again, finished):
     #counter(points)
     font = pygame.font.SysFont(None, 40)
     if points % 10 == 1:
-        img = font.render('Вы набрали ' + str(points) + ' балл', True, (0, 0, 0))
+        img = font.render('Вы набрали ' + str(points) + ' балл', True, start_button.color)
     elif points % 10 > 1 and points % 10 < 5:
-        img = font.render('Вы набрали ' + str(points) + ' балла', True, (0, 0, 0))
+        img = font.render('Вы набрали ' + str(points) + ' балла', True, start_button.color)
     elif points % 10 > 4 or points % 10 == 0:
-        img = font.render('Вы набрали ' + str(points) + ' баллов', True, (0, 0, 0))
+        img = font.render('Вы набрали ' + str(points) + ' баллов', True, start_button.color)
     screen.blit(img, (0.32 * WIDTH, 0.45 * HEIGHT))
     pygame.display.update()
     i += 1
@@ -898,7 +957,6 @@ def result(points, i, again, finished):
         again = False
     return i, again, finished
 
-pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 bullet = 0
 points = 0
@@ -918,15 +976,23 @@ tracks = []
 i = 0
 time_cldn = 0
 hp = 100
+start_button = Button('Старт', 270)
+exit_button = Button('Выход', 400)
 
 clock = pygame.time.Clock()
 gun = Gun(screen)
+Menu = True
+rule = False
 finished = False
 again = False
 cldn = False
 
 while not finished:
-    if not again:
+
+    if Menu:
+        Menu, finished = menu(Menu, finished)
+
+    if not again and not Menu and not finished:
         cldn, time_cldn = draw_all(targets, targ_sin, airplanes, bombs, balls, shots, tracks, gun, cldn, time_cldn, hp)
 
         gun, v_w, v_s, v_a, v_d, balls, shots, bullet, finished, cldn, time_cldn = events(gun, v_w, v_s, v_a, v_d, balls, shots, bullet, finished, cldn, time_cldn)
@@ -952,5 +1018,6 @@ while not finished:
         tracks = []
         i, again, finished = result(points, i, again, finished)
         hp = 100
+        if not again: Menu = True
 
 pygame.quit()
