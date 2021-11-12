@@ -131,31 +131,6 @@ def game_menu(rate, a, points):
             surface4.fill((255, 165, 0))
         screen.blit(surface4, (0.437 * width, 0.6 * height))
         screen.blit(img3, (0.45 * width, 0.6 * height))
-
-def finish_menu(a, b, c, d, e, p):
-    '''
-    Заключительное меню
-    '''
-    screen.fill((0, 0, 0))
-    font = pg.font.SysFont(None, 20)
-    img = font.render('Конец, нажмите в любом месте, чтобы выйти', True, (255, 255, 255))
-    screen.blit(img, (0.35 * width, 0.05 * height))
-    img = font.render('Ваш результат:', True, (255, 255, 255))
-    screen.blit(img, (0.43 * width, 0.1 * height))
-    img = font.render(str(p), True, (255, 255, 255))
-    screen.blit(img, (0.55 * width, 0.1 * height))
-    img = font.render('Лучшие результаты', True, (255, 255, 255))
-    screen.blit(img, (0.43 * width, 0.15 * height))
-    img = font.render(str(a), True, (255, 255, 255))
-    screen.blit(img, (0.5 * width, 0.2 * height))
-    img = font.render(str(b), True, (255, 255, 255))
-    screen.blit(img, (0.5 * width, 0.25 * height))
-    img = font.render(str(c), True, (255, 255, 255))
-    screen.blit(img, (0.5 * width, 0.3 * height))
-    img = font.render(str(d), True, (255, 255, 255))
-    screen.blit(img, (0.5 * width, 0.35 * height))
-    img = font.render(str(e), True, (255, 255, 255))
-    screen.blit(img, (0.5 * width, 0.4 * height))
     
 def counter(points):
     '''
@@ -464,7 +439,6 @@ def endgame(finished, points, menu):
     '''
     while not finished and not menu:
         clock.tick(FPS)
-        #finish_menu(a[5], a[4], a[3], a[2], a[1], int(points))
         fin = points
         rate = True
         game_menu(rate, a, fin)
